@@ -201,15 +201,17 @@ public class Client {
         System.out.println(myPlayer().cards.get(0).suit + "  " + myPlayer().cards.get(0).value);
         System.out.println(myPlayer().cards.get(1).suit + "  " + myPlayer().cards.get(1).value);
 
-//        gameRounds++;
-//        if(gameRounds <= 20) {
-//            System.out.println("GAME ROUNDS ARE: " + gameRounds);
-//            connection.sendMessage(Commands.Fold.toString());
-//            return;
-//        }
+        gameRounds++;
+        if(gameRounds <= 15) {
+            System.out.println("GAME ROUNDS ARE: " + gameRounds);
+            connection.sendMessage(Commands.Fold.toString());
+            return;
+        }
 
         if(gameRound.equals("BLIND")) {
             preFlopStrategy();
+        } else {
+            flopStrategy();
         }
 
     }
@@ -217,7 +219,20 @@ public class Client {
 
     private void preFlopStrategy() throws IOException {
 
-        String myCards = myPlayer().cards.get(0).value.toLowerCase().toString().concat(myPlayer().cards.get(1).value.toLowerCase().toString());
+        String firstCard = myPlayer().cards.get(0).value.toLowerCase().toString();
+        String secondCard = myPlayer().cards.get(1).value.toLowerCase().toString();
+
+        if(firstCard.equals("10")) {
+            System.out.println("FIRST CARD IS 10");
+            firstCard = "t";
+        }
+        if(secondCard.equals("10")) {
+            System.out.println("SECOND CARD IS 10");
+            secondCard = "t";
+        }
+
+        String myCards = firstCard.concat(secondCard);
+        System.out.println("MY CARDS AFTER THE CHANGE ARE: " + myCards);
 
         for (Player p : players) {
             if (p.status.equals("BigBlind")) {
@@ -250,12 +265,20 @@ public class Client {
         raiseCards.add("kj");
         raiseCards.add("qj");
         raiseCards.add("jt");
-        raiseCards.add("jt");
         raiseCards.add("t9");
+        raiseCards.add("jj");
+        raiseCards.add("tt");
+        raiseCards.add("99");
+        raiseCards.add("88");
+        raiseCards.add("77");
+
 
         for(int i = 0; i < raiseCards.size(); i++) {
             if(myCards.equals(raiseCards.get(i)) || myCards.equals((new StringBuilder(raiseCards.get(i)).reverse().toString()))) {
-                if (howMuchHasSomeoneRaised(bigBlind) >= myPlayer().balance / 3) {
+                if (howMuchHasSomeoneRaised(bigBlind) >= myPlayer().balance / 2.5) {
+                    connection.sendMessage(Commands.Fold.toString());
+                    return;
+                } else if(howMuchHasSomeoneRaised(bigBlind) > bigBlind) {
                     connection.sendMessage(Commands.Call.toString());
                     return;
                 }
@@ -285,10 +308,28 @@ public class Client {
         callCards.add("68");
         callCards.add("79");
         callCards.add("8t");
+        callCards.add("66");
+        callCards.add("55");
+        callCards.add("44");
+        callCards.add("33");
+        callCards.add("22");
+        callCards.add("kt");
+        callCards.add("k9");
+        callCards.add("k8");
+        callCards.add("k7");
+        callCards.add("a9");
+        callCards.add("a8");
+        callCards.add("a7");
+        callCards.add("a3");
+        callCards.add("a4");
+        callCards.add("q9");
+        callCards.add("q8");
+        callCards.add("q3");
 
         for(int i = 0; i < callCards.size(); i++) {
             if(myCards.equals(callCards.get(i)) || myCards.equals((new StringBuilder(callCards.get(i)).reverse().toString()))) {
-                if (howMuchHasSomeoneRaised(bigBlind) >= myPlayer().balance / 3) {
+
+                if (howMuchHasSomeoneRaised(bigBlind) >= myPlayer().balance / 5) {
                     connection.sendMessage(Commands.Fold.toString());
                     return;
                 }
@@ -297,9 +338,9 @@ public class Client {
                 return;
             }
         }
-
-        if (howMuchHasSomeoneRaised(bigBlind) != 0) {
-            System.out.println("PREFLOP WILL CHECK---------------");
+        System.out.println("-----------------------" + howMuchHasSomeoneRaised(bigBlind));
+        if (howMuchHasSomeoneRaised(bigBlind) == 0) {
+            System.out.println("PREFLOP WILL CALL---------------");
             connection.sendMessage(Commands.Call.toString());
             return;
         } else {
@@ -314,43 +355,139 @@ public class Client {
 
 
     private void flopStrategy() throws IOException {
-        if (howMuchHasSomeoneRaised(bigBlind) != 0) {
+        if (howMuchHasSomeoneRaised(bigBlind) == 0) {
             if (amIInGoodPosition()) {
                 connection.sendMessage(Commands.Rise.toString() + "," + bigBlind);
                 return;
             }
         }
 
+//        List<String> allPossibleCardCombinations = new ArrayList<String>();
+//        allPossibleCardCombinations.add("High card");
+//        allPossibleCardCombinations.add("Pair of");
+//        allPossibleCardCombinations.add("Two pairs");
+//        allPossibleCardCombinations.add("Set of");
+//        allPossibleCardCombinations.add("Straight");
+//        allPossibleCardCombinations.add("Flash");
+//        allPossibleCardCombinations.add("Full house");
+//        allPossibleCardCombinations.add("Four of");
 
-        List<String> allPossibleCardCombinations = new ArrayList<String>();
-        allPossibleCardCombinations.add("High card");
-        allPossibleCardCombinations.add("Pair of");
-        allPossibleCardCombinations.add("Two pairs");
-        allPossibleCardCombinations.add("Set of");
-        allPossibleCardCombinations.add("Straight");
-        allPossibleCardCombinations.add("Flash");
-        allPossibleCardCombinations.add("Full house");
-        allPossibleCardCombinations.add("Four of");
-
-        for(int i = 0; i < allPossibleCardCombinations.size(); i++) {
-
+        if (cardCombination.contains("High card")) {
+            if (!hasSomebodyRaised()) {
+                connection.sendMessage(Commands.Check.toString());
+                return;
+            } else {
+                connection.sendMessage(Commands.Fold.toString());
+                return;
+            }
         }
 
+        if (cardCombination.contains("Pair of")) {
+            System.out.println("I HAVE ONE PAIR");
+            if (!hasSomebodyRaised()) {
+                connection.sendMessage(Commands.Rise.toString() + "," + bigBlind);
+                return;
+            } else {
+                if(howMuchHasSomeoneRaised(bigBlind) > myPlayer().balance/4) {
+                    connection.sendMessage(Commands.Fold.toString());
+                    return;
+                } else {
+                    connection.sendMessage(Commands.Call.toString());
+                    return;
+                }
+            }
+        }
 
+        if (cardCombination.contains("Two pairs")) {
+            System.out.println("I HAVE TWO PAIRS!");
+            if(!hasSomebodyRaised()) {
+                connection.sendMessage(Commands.Rise.toString() + "," + myPlayer().balance/3);
+                return;
+            } else {
+                if(howMuchHasSomeoneRaised(bigBlind) >= 2.5*bigBlind) {
+                    connection.sendMessage(Commands.Fold.toString());
+                    return;
+                } else {
+                    connection.sendMessage(Commands.Call.toString());
+                    return;
+                }
+            }
+        }
+
+        if (cardCombination.contains("Set of")) {
+            System.out.println("I HAVE SET!");
+            if(!hasSomebodyRaised()) {
+                connection.sendMessage(Commands.Rise.toString() + "," + 2*bigBlind);
+                return;
+            } else {
+                if(howMuchHasSomeoneRaised(bigBlind) >= myPlayer().balance-200) {
+                    connection.sendMessage(Commands.Fold.toString());
+                    return;
+                } else {
+                    connection.sendMessage(Commands.Call.toString());
+                    return;
+                }
+            }
+        }
+
+        if (cardCombination.contains("Straight")) {
+            System.out.println("I HAVE STRAIGHT!");
+            System.out.println(howMuchHasSomeoneRaised(bigBlind));
+            if(!hasSomebodyRaised()) {
+                connection.sendMessage(Commands.Rise.toString() + "," + 2*bigBlind);
+                return;
+            } else {
+                if(howMuchHasSomeoneRaised(bigBlind) >= myPlayer().balance/2) {
+                    connection.sendMessage(Commands.Fold.toString());
+                    return;
+                } else {
+                    connection.sendMessage(Commands.Call.toString());
+                    return;
+                }
+            }
+        }
+
+        if (cardCombination.contains("Flash")) {
+            System.out.println("I HAVE FLUSH!");
+            System.out.println(howMuchHasSomeoneRaised(bigBlind));
+            if(!hasSomebodyRaised()) {
+                connection.sendMessage(Commands.Rise.toString() + "," + myPlayer().balance/2);
+                return;
+            } else {
+                if(howMuchHasSomeoneRaised(bigBlind) >= 2.5*bigBlind) {
+                    connection.sendMessage(Commands.Fold.toString());
+                    return;
+                } else {
+                    connection.sendMessage(Commands.Call.toString());
+                    return;
+                }
+            }
+        }
+
+        if (cardCombination.contains("Full house")) {
+            System.out.println("I HAVE FLUSH!");
+            System.out.println(howMuchHasSomeoneRaised(bigBlind));
+            if(!hasSomebodyRaised()) {
+                connection.sendMessage(Commands.Rise.toString() + "," + 3.5*bigBlind);
+                return;
+            } else {
+                    connection.sendMessage(Commands.Call.toString());
+                    return;
+            }
+        }
+
+        if (cardCombination.contains("Four of")) {
+            System.out.println("I HAVE FOUR OF A KIND!");
+            if(!hasSomebodyRaised()) {
+                connection.sendMessage(Commands.Rise.toString() + "," + 4*bigBlind);
+                return;
+            } else {
+                connection.sendMessage(Commands.Call.toString());
+                return;
+            }
+        }
     }
 
-
-
-
-//    private int positionOnTable() {
-//        for (int i = 0; i < players.size(); i++) {
-//            if (players.get(i).status.equalsIgnoreCase("smallblind")) {
-////                p = i;
-////            }
-////        }
-//            }
-//        }
-//    }
 
     private int howMuchHasSomeoneRaised(int bigBlind){
         int otherBetRaise = 0;
@@ -364,14 +501,26 @@ public class Client {
         return otherBetRaise;
     }
 
-    // TODO fix this logic if you have time ->
+    private boolean hasSomebodyRaised() {
+        boolean somebodyRaised = false;
+        for (Player p : players) {
+            if (!p.name.equals(myPlayer().name)) {
+                if (p.status.equals("Rise") || p.status.equals("AllIn")) {
+                    System.out.println("SOMEBODY RAISE!!!!!!!");
+                    somebodyRaised = true;
+                }
+            }
+        }
+        System.out.println("RESULT IS------" + somebodyRaised);
+        return somebodyRaised;
+    }
+
     private boolean amIInGoodPosition() {
         if(dealer.equals(myPlayer().name)) {
             return true;
         }
         return false;
     }
-
 
 
     private Player myPlayer() {
