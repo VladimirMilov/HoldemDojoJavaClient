@@ -15,10 +15,10 @@ import java.util.Arrays;
 import java.util.Collections;
 
 public class Client {
-    private static final String userName = "Vladi";
+    private static final String userName = "Vlado-BOT";
     private static final String password = "somePassword";
 
-    private static final String SERVER = "ws://10.22.40.124:8080/ws";
+    private static final String SERVER = "ws://10.22.40.111:8080/ws";
     private org.eclipse.jetty.websocket.WebSocket.Connection connection;
 
     enum Commands {
@@ -202,7 +202,7 @@ public class Client {
         System.out.println(myPlayer().cards.get(1).suit + "  " + myPlayer().cards.get(1).value);
 
         gameRounds++;
-        if(gameRounds <= 15) {
+        if(gameRounds <= 10) {
             System.out.println("GAME ROUNDS ARE: " + gameRounds);
             connection.sendMessage(Commands.Fold.toString());
             return;
@@ -275,6 +275,9 @@ public class Client {
 
         for(int i = 0; i < raiseCards.size(); i++) {
             if(myCards.equals(raiseCards.get(i)) || myCards.equals((new StringBuilder(raiseCards.get(i)).reverse().toString()))) {
+                if(myPlayer().balance <= 150) {
+                    connection.sendMessage(Commands.AllIn.toString());
+                }
                 if (howMuchHasSomeoneRaised(bigBlind) >= myPlayer().balance / 2.5) {
                     connection.sendMessage(Commands.Fold.toString());
                     return;
@@ -325,10 +328,15 @@ public class Client {
         callCards.add("q9");
         callCards.add("q8");
         callCards.add("q3");
+        callCards.add("j9");
+        callCards.add("j8");
+        callCards.add("j7");
 
         for(int i = 0; i < callCards.size(); i++) {
             if(myCards.equals(callCards.get(i)) || myCards.equals((new StringBuilder(callCards.get(i)).reverse().toString()))) {
-
+                if(myPlayer().balance <= 100) {
+                    connection.sendMessage(Commands.AllIn.toString());
+                }
                 if (howMuchHasSomeoneRaised(bigBlind) >= myPlayer().balance / 5) {
                     connection.sendMessage(Commands.Fold.toString());
                     return;
@@ -361,17 +369,6 @@ public class Client {
                 return;
             }
         }
-
-//        List<String> allPossibleCardCombinations = new ArrayList<String>();
-//        allPossibleCardCombinations.add("High card");
-//        allPossibleCardCombinations.add("Pair of");
-//        allPossibleCardCombinations.add("Two pairs");
-//        allPossibleCardCombinations.add("Set of");
-//        allPossibleCardCombinations.add("Straight");
-//        allPossibleCardCombinations.add("Flash");
-//        allPossibleCardCombinations.add("Full house");
-//        allPossibleCardCombinations.add("Four of");
-
         if (cardCombination.contains("High card")) {
             if (!hasSomebodyRaised()) {
                 connection.sendMessage(Commands.Check.toString());
@@ -388,7 +385,7 @@ public class Client {
                 connection.sendMessage(Commands.Rise.toString() + "," + bigBlind);
                 return;
             } else {
-                if(howMuchHasSomeoneRaised(bigBlind) > myPlayer().balance/4) {
+                if(howMuchHasSomeoneRaised(bigBlind) > myPlayer().balance - 500) {
                     connection.sendMessage(Commands.Fold.toString());
                     return;
                 } else {
@@ -400,11 +397,14 @@ public class Client {
 
         if (cardCombination.contains("Two pairs")) {
             System.out.println("I HAVE TWO PAIRS!");
+            if(myPlayer().balance <= 150) {
+                connection.sendMessage(Commands.AllIn.toString());
+            }
             if(!hasSomebodyRaised()) {
                 connection.sendMessage(Commands.Rise.toString() + "," + myPlayer().balance/3);
                 return;
             } else {
-                if(howMuchHasSomeoneRaised(bigBlind) >= 2.5*bigBlind) {
+                if(howMuchHasSomeoneRaised(bigBlind) >= myPlayer().balance-100) {
                     connection.sendMessage(Commands.Fold.toString());
                     return;
                 } else {
@@ -416,23 +416,24 @@ public class Client {
 
         if (cardCombination.contains("Set of")) {
             System.out.println("I HAVE SET!");
+            if(myPlayer().balance <= 300) {
+                connection.sendMessage(Commands.AllIn.toString());
+            }
             if(!hasSomebodyRaised()) {
                 connection.sendMessage(Commands.Rise.toString() + "," + 2*bigBlind);
                 return;
             } else {
-                if(howMuchHasSomeoneRaised(bigBlind) >= myPlayer().balance-200) {
-                    connection.sendMessage(Commands.Fold.toString());
-                    return;
-                } else {
                     connection.sendMessage(Commands.Call.toString());
                     return;
-                }
             }
         }
 
         if (cardCombination.contains("Straight")) {
             System.out.println("I HAVE STRAIGHT!");
             System.out.println(howMuchHasSomeoneRaised(bigBlind));
+            if(myPlayer().balance <= 150) {
+                connection.sendMessage(Commands.AllIn.toString());
+            }
             if(!hasSomebodyRaised()) {
                 connection.sendMessage(Commands.Rise.toString() + "," + 2*bigBlind);
                 return;
@@ -450,11 +451,14 @@ public class Client {
         if (cardCombination.contains("Flash")) {
             System.out.println("I HAVE FLUSH!");
             System.out.println(howMuchHasSomeoneRaised(bigBlind));
+            if(myPlayer().balance <= 150) {
+                connection.sendMessage(Commands.AllIn.toString());
+            }
             if(!hasSomebodyRaised()) {
-                connection.sendMessage(Commands.Rise.toString() + "," + myPlayer().balance/2);
+                connection.sendMessage(Commands.Rise.toString() + "," + 2*bigBlind);
                 return;
             } else {
-                if(howMuchHasSomeoneRaised(bigBlind) >= 2.5*bigBlind) {
+                if(howMuchHasSomeoneRaised(bigBlind) >= myPlayer().balance/2) {
                     connection.sendMessage(Commands.Fold.toString());
                     return;
                 } else {
@@ -465,8 +469,11 @@ public class Client {
         }
 
         if (cardCombination.contains("Full house")) {
-            System.out.println("I HAVE FLUSH!");
+            System.out.println("I HAVE full house!");
             System.out.println(howMuchHasSomeoneRaised(bigBlind));
+            if(myPlayer().balance <= 150) {
+                connection.sendMessage(Commands.AllIn.toString());
+            }
             if(!hasSomebodyRaised()) {
                 connection.sendMessage(Commands.Rise.toString() + "," + 3.5*bigBlind);
                 return;
@@ -478,6 +485,9 @@ public class Client {
 
         if (cardCombination.contains("Four of")) {
             System.out.println("I HAVE FOUR OF A KIND!");
+            if(myPlayer().balance <= 400) {
+                connection.sendMessage(Commands.AllIn.toString());
+            }
             if(!hasSomebodyRaised()) {
                 connection.sendMessage(Commands.Rise.toString() + "," + 4*bigBlind);
                 return;
